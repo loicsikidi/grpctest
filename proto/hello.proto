@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package hello;
+
+option go_package = "github.com/loicsikidi/grpctest/proto/hello";
+
+service Greeter {
+  rpc SayHello (HelloRequest) returns (HelloReply) {}
+  rpc SayBye (ByeRequest) returns (ByeReply) {}
+}
+
+message HelloRequest {
+  string name = 1;
+}
+
+message HelloReply {
+  string message = 1;
+}
+
+message ByeRequest {
+  string name = 1;
+}
+
+message ByeReply {
+  string message = 1;
+}

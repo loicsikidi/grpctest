@@ -1,0 +1,16 @@
+# For details on buf.yaml configuration, visit https://buf.build/docs/configuration/v2/buf-yaml
+version: v2
+lint:
+  use:
+    - STANDARD
+    - COMMENT_ENUM
+    - COMMENT_MESSAGE
+    - COMMENT_RPC
+    - COMMENT_SERVICE
+    - PACKAGE_NO_IMPORT_CYCLE
+    - PAGINATION_REQUIRED
+    - UNARY_RPC
+breaking:
+  use:
+    - FILE
+    - ENUM_VALUE_NO_DELETE
