@@ -8,16 +8,23 @@
   );
   pre-commit-check = git-hooks-src.run {
     src = ./.;
-    # If your hooks are intrusive, avoid running on each commit with a default_states like this:
-    # default_stages = [ "manual" "pre-push" ];
     hooks = {
       # common
       end-of-file-fixer.enable = true;
       # nix
-      alejandra.enable = true;
+      alejandra = {
+        enable = true;
+        package = pkgs.alejandra;
+      };
       # golang
-      gofmt.enable = true;
-      govet.enable = true;
+      gofmt = {
+        enable = true;
+        package = pkgs.go;
+      };
+      govet = {
+        enable = true;
+        package = pkgs.go;
+      };
       golangci-lint = {
         enable = true;
         package = pkgs.golangci-lint;

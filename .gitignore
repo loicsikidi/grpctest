@@ -34,3 +34,6 @@ result-*
 
 # git-hooks.nix's auto-generated config file
 .pre-commit-config.yaml
+
+# direnv state directory
+.direnv/
