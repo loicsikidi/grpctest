@@ -10,7 +10,10 @@
     src = ./.;
     hooks = {
       # common
-      end-of-file-fixer.enable = true;
+      end-of-file-fixer = {
+        enable = true;
+        package = pkgs.python3Packages.pre-commit-hooks;
+      };
       # nix
       alejandra = {
         enable = true;
