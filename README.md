@@ -1,5 +1,9 @@
 # grpctest
 
+![go version](https://img.shields.io/github/go-mod/go-version/loicsikidi/grpctest)
+[![godoc](https://pkg.go.dev/badge/github.com/loicsikidi/grpctest/v1.svg)](https://pkg.go.dev/github.com/loicsikidi/grpctest)
+[![license](https://img.shields.io/badge/license-BSD--3--Clause-blue?style=flat-square)](https://raw.githubusercontent.com/loicsikidi/grpctest/main/LICENSE)
+
 A Go library for testing gRPC servers, inspired by the standard library's [`httptest`](https://pkg.go.dev/net/http/httptest).
 
 ## Motivation
