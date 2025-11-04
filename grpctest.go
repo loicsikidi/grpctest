@@ -153,7 +153,8 @@ func (s *Server) StartTLS() {
 }
 
 // start is the internal method that actually starts the server.
-// Must be called with s.mu held.
+//
+// Note: must be called with s.mu held.
 func (s *Server) start() error {
 	if s.started {
 		return nil
@@ -194,7 +195,8 @@ func (s *Server) start() error {
 }
 
 // setupTLS generates a self-signed certificate for the test server.
-// Must be called with s.mu held.
+//
+// Note: must be called with s.mu held.
 func (s *Server) setupTLS() error {
 	// Generate private key
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -299,26 +301,50 @@ func (s *Server) Certificate() *x509.Certificate {
 }
 
 // ClientConn returns a gRPC client connection to the test server.
-// For TLS servers, the client is configured to trust the server's self-signed certificate.
+// For TLS servers, the client is configured to trust the server's self-signed certificate
+// unless custom transport credentials are provided via opts.
+//
+// Custom [grpc.DialOption] can be passed to configure the connection. Options provided
+// by the caller will override default options (including [grpc.WithTransportCredentials]).
 //
 // Notes:
-//   - the connection is cached and reused on subsequent calls.
+//   - when called without options, the connection is cached and reused on subsequent calls.
+//   - when called with options, a new connection is created each time (no caching).
 //   - the connection will be closed when the server is closed.
 //   - this method panics if the server is not started.
-func (s *Server) ClientConn() grpc.ClientConnInterface {
+func (s *Server) ClientConn(opts ...grpc.DialOption) grpc.ClientConnInterface {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
-	if s.client != nil {
-		return s.client
-	}
 
 	if !s.started {
 		panic("grpctest: server not started")
 	}
 
-	var opts []grpc.DialOption
+	// If custom options are provided, create a new client (no caching)
+	if len(opts) > 0 {
+		return s.createClient(opts...)
+	}
 
+	// Use cached client if available
+	if s.client != nil {
+		return s.client
+	}
+
+	// Create and cache the default client
+	s.client = s.createClient()
+	return s.client
+}
+
+// createClient creates a new gRPC client connection with the given options.
+// Default transport credentials are added first, then user options are appended,
+// allowing user options to override defaults.
+//
+// Note: this method panics if the connection fails.
+func (s *Server) createClient(opts ...grpc.DialOption) *grpc.ClientConn {
+	// Start with default options
+	finalOpts := make([]grpc.DialOption, 0, len(opts)+1)
+
+	// Add default transport credentials first
 	if s.useTLS {
 		// Create cert pool with server's certificate
 		certPool := x509.NewCertPool()
@@ -328,16 +354,18 @@ func (s *Server) ClientConn() grpc.ClientConnInterface {
 			RootCAs:    certPool,
 			ServerName: "localhost",
 		})
-		opts = append(opts, grpc.WithTransportCredentials(creds))
+		finalOpts = append(finalOpts, grpc.WithTransportCredentials(creds))
 	} else {
-		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		finalOpts = append(finalOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
-	conn, err := grpc.NewClient(s.URL, opts...)
+	// Append user options (these will override defaults if they conflict)
+	finalOpts = append(finalOpts, opts...)
+
+	conn, err := grpc.NewClient(s.URL, finalOpts...)
 	if err != nil {
 		panic(fmt.Sprintf("grpctest: failed to dial server: %v", err))
 	}
 
-	s.client = conn
 	return conn
 }
