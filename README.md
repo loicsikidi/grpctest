@@ -8,6 +8,9 @@ When testing gRPC servers in Go, setting up a test server often involves boilerp
 
 ## Features
 
+> [!NOTE]
+> Currently, `grpctest` mainly mimics [`httptest.Server`](https://pkg.go.dev/net/http/httptest#Server)'s features. Request and response recording (like [`httptest.ResponseRecorder`](https://pkg.go.dev/net/http/httptest#ResponseRecorder)) might be added in the future.
+
 Like `httptest`, `grpctest` provides a similar interface for testing gRPC servers:
 
 - **NewServer()**: creates and starts a server on a random local port
@@ -15,7 +18,7 @@ Like `httptest`, `grpctest` provides a similar interface for testing gRPC server
 - **NewTLSServer()**: creates a TLS server with self-signed certificate
 - **Server.URL**: contains the server address (e.g., "127.0.0.1:12345")
 - **Server.TLS**: server's TLS configuration (i.e. `*tls.Config`)
-- **Server.ClientConn()**: returns a configured gRPC client connection to the server
+- **Server.ClientConn(opts...)**: returns a configured gRPC client connection to the server (with optional custom dial options)
 - **Server.Certificate()**: returns the server's x509 certificate (for TLS)
 
 ## Installation
@@ -242,6 +245,59 @@ func TestWithAssertions(t *testing.T) {
     if status.Code(err) != codes.InvalidArgument {
         t.Errorf("expected InvalidArgument, got %v", status.Code(err))
     }
+}
+```
+
+### Custom client dial options
+
+`ClientConn()` accepts variadic [grpc.DialOption] parameters, allowing you to customize the client connection. User-provided options override defaults:
+
+```go
+func TestWithCustomDialOptions(t *testing.T) {
+    server := grpctest.NewServer(func(s *grpc.Server) {
+        pb.RegisterGreeterServer(s, &yourImpl{})
+    })
+    defer server.Close()
+
+    // Add custom dial options
+    client := pb.NewGreeterClient(
+        server.ClientConn(
+            grpc.WithUserAgent("my-test-agent"),
+            grpc.WithBlock(),
+        ),
+    )
+
+    // Make requests...
+}
+```
+
+**Caching behavior:**
+- `server.ClientConn()` without options: connection is cached and reused
+- `server.ClientConn(opts...)` with options: new connection created each time (no caching)
+
+**Overriding transport credentials:**
+
+> [!NOTE]
+> Normally, you don't need to set transport credentials manually, as `grpctest` configures them automatically (insecure for non-TLS servers, and proper TLS config for TLS servers). However, if you need to customize them, you can do so with this example.
+
+User-provided [grpc.WithTransportCredentials] overrides the default credentials:
+
+```go
+func TestCustomTransportCredentials(t *testing.T) {
+    server := grpctest.NewServer(func(s *grpc.Server) {
+        pb.RegisterGreeterServer(s, &yourImpl{})
+    })
+    defer server.Close()
+
+    // Override default insecure credentials with custom ones
+    customCreds := insecure.NewCredentials() // or your own credentials
+    client := pb.NewGreeterClient(
+        server.ClientConn(
+            grpc.WithTransportCredentials(customCreds),
+        ),
+    )
+
+    // Make requests...
 }
 ```
 

@@ -9,6 +9,7 @@ import (
 	pb "github.com/loicsikidi/grpctest/proto/hello"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 )
 
@@ -305,12 +306,98 @@ func TestClientCaching(t *testing.T) {
 	})
 	defer server.Close()
 
-	// Get client multiple times
+	// Get client multiple times without options
 	client1 := server.ClientConn()
 	client2 := server.ClientConn()
 
-	// Should be the same instance
+	// Should be the same instance when called without options
 	if client1 != client2 {
 		t.Error("expected ClientConn() to return the same instance")
+	}
+}
+
+func TestClientConnWithCustomOptions(t *testing.T) {
+	handler := &greeterHandler{
+		handler: func(ctx context.Context, req *pb.HelloRequest) (*pb.HelloReply, error) {
+			return &pb.HelloReply{Message: "Hello " + req.Name}, nil
+		},
+	}
+
+	server := grpctest.NewServer(func(s *grpc.Server) {
+		pb.RegisterGreeterServer(s, handler)
+	})
+	defer server.Close()
+
+	// Create client with custom dial options
+	client := pb.NewGreeterClient(
+		server.ClientConn(
+			grpc.WithUserAgent("test-agent"),
+		),
+	)
+
+	ctx := context.Background()
+	resp, err := client.SayHello(ctx, &pb.HelloRequest{Name: "Custom"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if resp.Message != "Hello Custom" {
+		t.Errorf("expected 'Hello Custom', got '%s'", resp.Message)
+	}
+}
+
+func TestClientConnWithCustomTransportCredentials(t *testing.T) {
+	handler := &greeterHandler{
+		handler: func(ctx context.Context, req *pb.HelloRequest) (*pb.HelloReply, error) {
+			return &pb.HelloReply{Message: "Hello " + req.Name}, nil
+		},
+	}
+
+	server := grpctest.NewServer(func(s *grpc.Server) {
+		pb.RegisterGreeterServer(s, handler)
+	})
+	defer server.Close()
+
+	// Override with insecure credentials (should work since server is not using TLS)
+	client := pb.NewGreeterClient(
+		server.ClientConn(
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+		),
+	)
+
+	ctx := context.Background()
+	resp, err := client.SayHello(ctx, &pb.HelloRequest{Name: "Override"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if resp.Message != "Hello Override" {
+		t.Errorf("expected 'Hello Override', got '%s'", resp.Message)
+	}
+}
+
+func TestClientConnNoCachingWithOptions(t *testing.T) {
+	handler := &greeterHandler{}
+
+	server := grpctest.NewServer(func(s *grpc.Server) {
+		pb.RegisterGreeterServer(s, handler)
+	})
+	defer server.Close()
+
+	// Get client with options - should create new instances each time
+	client1 := server.ClientConn(grpc.WithUserAgent("agent1"))
+	client2 := server.ClientConn(grpc.WithUserAgent("agent2"))
+
+	// Should be different instances when called with options
+	if client1 == client2 {
+		t.Error("expected ClientConn(opts) to return different instances")
+	}
+
+	// But calling without options should still use cache
+	cachedClient1 := server.ClientConn()
+	cachedClient2 := server.ClientConn()
+
+	if cachedClient1 != cachedClient2 {
+		t.Error("expected ClientConn() without options to return the same instance")
 	}
 }
