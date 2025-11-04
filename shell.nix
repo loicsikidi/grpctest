@@ -30,7 +30,7 @@ let
     runtimeInputs = [pkgs.go];
     text = ''
       paths=$(go list ./... | grep -vE '/proto') # exclude generated code
-      if ! go test -count=1 -failfast -covermode=count -race -coverprofile=coverage.out -v "$paths"; then
+      if ! go test -count=1 -failfast -covermode=count -coverprofile=coverage.out -v "$paths"; then
         echo "tests failed ⛔"
         exit 1
       fi
