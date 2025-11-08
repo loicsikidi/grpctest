@@ -109,94 +109,6 @@ func (x *HelloReply) GetMessage() string {
 	return ""
 }
 
-type ByeRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ByeRequest) Reset() {
-	*x = ByeRequest{}
-	mi := &file_proto_hello_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ByeRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ByeRequest) ProtoMessage() {}
-
-func (x *ByeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_hello_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ByeRequest.ProtoReflect.Descriptor instead.
-func (*ByeRequest) Descriptor() ([]byte, []int) {
-	return file_proto_hello_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *ByeRequest) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-type ByeReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ByeReply) Reset() {
-	*x = ByeReply{}
-	mi := &file_proto_hello_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ByeReply) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ByeReply) ProtoMessage() {}
-
-func (x *ByeReply) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_hello_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ByeReply.ProtoReflect.Descriptor instead.
-func (*ByeReply) Descriptor() ([]byte, []int) {
-	return file_proto_hello_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *ByeReply) GetMessage() string {
-	if x != nil {
-		return x.Message
-	}
-	return ""
-}
-
 var File_proto_hello_proto protoreflect.FileDescriptor
 
 const file_proto_hello_proto_rawDesc = "" +
@@ -206,15 +118,10 @@ const file_proto_hello_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\"&\n" +
 	"\n" +
 	"HelloReply\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage\" \n" +
-	"\n" +
-	"ByeRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"$\n" +
-	"\bByeReply\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage2o\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage2\x7f\n" +
 	"\aGreeter\x124\n" +
-	"\bSayHello\x12\x13.hello.HelloRequest\x1a\x11.hello.HelloReply\"\x00\x12.\n" +
-	"\x06SayBye\x12\x11.hello.ByeRequest\x1a\x0f.hello.ByeReply\"\x00B,Z*github.com/loicsikidi/grpctest/proto/hellob\x06proto3"
+	"\bSayHello\x12\x13.hello.HelloRequest\x1a\x11.hello.HelloReply\"\x00\x12>\n" +
+	"\x0eSayHelloStream\x12\x13.hello.HelloRequest\x1a\x11.hello.HelloReply\"\x00(\x010\x01B,Z*github.com/loicsikidi/grpctest/proto/hellob\x06proto3"
 
 var (
 	file_proto_hello_proto_rawDescOnce sync.Once
@@ -228,18 +135,16 @@ func file_proto_hello_proto_rawDescGZIP() []byte {
 	return file_proto_hello_proto_rawDescData
 }
 
-var file_proto_hello_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_proto_hello_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_hello_proto_goTypes = []any{
 	(*HelloRequest)(nil), // 0: hello.HelloRequest
 	(*HelloReply)(nil),   // 1: hello.HelloReply
-	(*ByeRequest)(nil),   // 2: hello.ByeRequest
-	(*ByeReply)(nil),     // 3: hello.ByeReply
 }
 var file_proto_hello_proto_depIdxs = []int32{
 	0, // 0: hello.Greeter.SayHello:input_type -> hello.HelloRequest
-	2, // 1: hello.Greeter.SayBye:input_type -> hello.ByeRequest
+	0, // 1: hello.Greeter.SayHelloStream:input_type -> hello.HelloRequest
 	1, // 2: hello.Greeter.SayHello:output_type -> hello.HelloReply
-	3, // 3: hello.Greeter.SayBye:output_type -> hello.ByeReply
+	1, // 3: hello.Greeter.SayHelloStream:output_type -> hello.HelloReply
 	2, // [2:4] is the sub-list for method output_type
 	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -258,7 +163,7 @@ func file_proto_hello_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_hello_proto_rawDesc), len(file_proto_hello_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

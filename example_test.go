@@ -2,7 +2,6 @@ package grpctest_test
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/loicsikidi/grpctest"
@@ -72,16 +71,5 @@ func TestMinimalImplementation(t *testing.T) {
 
 	if resp.Message != "Hello, stranger!" {
 		t.Errorf("expected 'Hello, stranger!', got '%s'", resp.Message)
-	}
-
-	// Verify that calling SayBye (which we didn't implement) returns Unimplemented error
-	// This demonstrates that we successfully avoided implementing all methods
-	_, err = client.SayBye(ctx, &pb.ByeRequest{Name: "Alice"})
-	if err == nil {
-		t.Error("expected SayBye to return Unimplemented error since we didn't implement it")
-	}
-	// The error should be about unimplemented method
-	if !strings.Contains(err.Error(), "Unimplemented") {
-		t.Logf("SayBye correctly returned error (as expected): %v", err)
 	}
 }
