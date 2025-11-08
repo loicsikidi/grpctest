@@ -305,6 +305,122 @@ func TestCustomTransportCredentials(t *testing.T) {
 }
 ```
 
+## Testing Helpers
+
+### GreeterServer
+
+`grpctest` provides a [GreeterServer](helpers.go) helper that implements the `hello.GreeterServer` interface (from [proto/hello](proto/hello.proto)). This is particularly useful when you want to test interceptors or other middleware without writing boilerplate service implementations.
+
+The `GreeterServer` struct has optional handler functions that you can set to customize behavior:
+
+- **SayHelloHandler**: handles unary RPC calls to `SayHello`
+- **SayHelloStreamHandler**: handles bidirectional streaming RPC calls to `SayHelloStream`
+
+If handlers are not set, default implementations are used.
+
+#### Example: Testing an interceptor with minimal boilerplate
+
+```go
+import (
+    "context"
+    "testing"
+
+    "github.com/loicsikidi/grpctest"
+    pb "github.com/loicsikidi/grpctest/proto/hello"
+    "google.golang.org/grpc"
+)
+
+func TestInterceptorWithHelper(t *testing.T) {
+    server := grpctest.NewUnstartedServer(func(s *grpc.Server) {
+        // Use GreeterServer helper - no need to implement the full service
+        greeter := &grpctest.GreeterServer{
+            SayHelloHandler: func(ctx context.Context, req *pb.HelloRequest) (*pb.HelloReply, error) {
+                return &pb.HelloReply{Message: "Hello " + req.Name}, nil
+            },
+        }
+        pb.RegisterGreeterServer(s, greeter)
+    })
+
+    // Add your interceptor to test
+    server.Config.ServerOptions = append(
+        server.Config.ServerOptions,
+        grpc.UnaryInterceptor(yourInterceptor),
+    )
+
+    server.Start()
+    defer server.Close()
+
+    // Test your interceptor behavior
+    client := pb.NewGreeterClient(server.ClientConn())
+    resp, err := client.SayHello(context.Background(), &pb.HelloRequest{Name: "World"})
+    // Assertions...
+}
+```
+
+#### Example: Using the default SayHelloStream behavior
+
+The default `SayHelloStream` implementation receives the first message from the client, sends back a "busy" response, and closes the stream:
+
+```go
+func TestStreamWithDefaultBehavior(t *testing.T) {
+    server := grpctest.NewServer(func(s *grpc.Server) {
+        // Use default behavior - no handler needed
+        pb.RegisterGreeterServer(s, &grpctest.GreeterServer{})
+    })
+    defer server.Close()
+
+    client := pb.NewGreeterClient(server.ClientConn())
+    stream, err := client.SayHelloStream(context.Background())
+    if err != nil {
+        t.Fatal(err)
+    }
+
+    // Send a message
+    if err := stream.Send(&pb.HelloRequest{Name: "Alice"}); err != nil {
+        t.Fatal(err)
+    }
+
+    // Receive the default response
+    resp, err := stream.Recv()
+    if err != nil {
+        t.Fatal(err)
+    }
+
+    // Default response: "hello Alice, I'm sorry I'm busy..., bye"
+    t.Log(resp.Message)
+}
+```
+
+#### Example: Custom SayHelloStream handler
+
+```go
+func TestStreamWithCustomHandler(t *testing.T) {
+    server := grpctest.NewServer(func(s *grpc.Server) {
+        greeter := &grpctest.GreeterServer{
+            SayHelloStreamHandler: func(stream pb.Greeter_SayHelloStreamServer) error {
+                // Custom bidirectional streaming logic
+                for {
+                    req, err := stream.Recv()
+                    if err != nil {
+                        return err
+                    }
+
+                    if err := stream.Send(&pb.HelloReply{
+                        Message: "Echo: " + req.Name,
+                    }); err != nil {
+                        return err
+                    }
+                }
+            },
+        }
+        pb.RegisterGreeterServer(s, greeter)
+    })
+    defer server.Close()
+
+    // Test your custom streaming behavior...
+}
+```
+
 ## Dependencies
 
 > [!WARNING]
