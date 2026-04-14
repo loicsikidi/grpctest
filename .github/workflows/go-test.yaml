@@ -12,6 +12,8 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # note: latest version of google.golang.org/genproto/googleapis/rpc requires Go 1.25.0
+    continue-on-error: ${{ matrix.go.go-version-file == 'go.mod' && matrix.deps == 'latest' }}
     strategy:
       fail-fast: false
       matrix:
@@ -22,8 +24,6 @@ jobs:
         deps:
           - locked
           - latest
-      # note: latest version of google.golang.org/genproto/googleapis/rpc requires Go 1.25.0
-      continue-on-error: ${{ matrix.go.go-version-file == 'go.mod' && matrix.deps == 'latest' }}
     steps:
       - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
