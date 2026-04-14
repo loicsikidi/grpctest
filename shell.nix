@@ -1,57 +1,31 @@
-let
-  # Pin nixpkgs to a specific commit for reproducibility (Go 1.25.1)
-  nixpkgs = fetchTarball {
-    url = "https://github.com/NixOS/nixpkgs/archive/bce5fe2bb998488d8e7e7856315f90496723793c.tar.gz";
-    sha256 = "sha256:0hkpgac4djwffciz171h37zb8xx26q6af1aa0c87233kgvscn1dz";
-  };
-  pkgs = import nixpkgs {};
-
-  pre-commit-check = pkgs.callPackage ./.nix/precommit.nix {inherit pkgs;};
-
-  genproto = pkgs.writeShellApplication {
-    name = "genproto";
-    runtimeInputs = [
-      pkgs.buf
-      pkgs.go
-    ];
-    text = ''
-      go get -u google.golang.org/grpc/cmd/protoc-gen-go-grpc
-      if ! buf generate .; then
-        echo "proto generate failed ⛔"
-        exit 1
-      fi
-      go mod tidy
-      echo "proto generate succeeded 💫"
-    '';
-  };
-
-  gotest = pkgs.writeShellApplication {
-    name = "gotest";
-    runtimeInputs = [pkgs.go];
-    text = ''
-      paths=$(go list ./... | grep -vE '/proto') # exclude generated code
-      if ! go test -count=1 -failfast -covermode=count -coverprofile=coverage.out -v "$paths"; then
-        echo "tests failed ⛔"
-        exit 1
-      fi
-      rm -f coverage.out
-      echo "all tests passed 💫"
-    '';
+{
+  pkgs ?
+    import (fetchTarball
+      # go v1.26.0
+      "https://github.com/NixOS/nixpkgs/archive/80d901ec0377e19ac3f7bb8c035201e2e098cc97.tar.gz")
+    {},
+}: let
+  helpers = import (builtins.fetchTarball
+    "https://github.com/loicsikidi/nix-shell-toolbox/tarball/main") {
+    inherit pkgs;
+    hooksConfig = {
+      gotest.settings.flags = "-race";
+    };
   };
 in
   pkgs.mkShell {
-    buildInputs = pre-commit-check.enabledPackages;
+    buildInputs = helpers.packages;
+
     shellHook = ''
-      ${pre-commit-check.shellHook}
+      ${helpers.shellHook}
+      echo "Development environment ready!"
+      echo "  - Go version: $(go version)"
     '';
 
-    packages = with pkgs; [
-      go
-      buf
-      delve
+    # to enable debugging with delve
+    hardeningDisable = ["fortify"];
 
-      # helper scripts
-      genproto
-      gotest
-    ];
+    env = {
+      CGO_ENABLED = "0";
+    };
   }
