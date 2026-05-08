@@ -432,6 +432,21 @@ func TestStreamWithCustomHandler(t *testing.T) {
 | [google.golang.org/grpc](https://pkg.go.dev/google.golang.org/grpc) | The Go implementation of gRPC, used to create and manage gRPC servers and clients. |
 | [google.golang.org/protobuf](https://pkg.go.dev/google.golang.org/protobuf) | Use to build & use [hello](./proto/hello/) proto mainly for testing purpose. **This dep might be removed in the future.** |
 
+### Update Policy
+
+> [!NOTE]
+> For those interested in understanding the motivations behind this approach, I recommend reading [Filippo Valsorda's thoughts on Dependabot](https://words.filippo.io/dependabot/).
+
+This project does not rely on automated dependency update tools like Dependabot. When managing multiple projects in parallel, such tools generate more noise than value.
+
+Instead, this project follows a pragmatic, security-first approach:
+
+1. **`govulncheck` runs daily** to detect vulnerable dependencies. When a vulnerability is identified → we bump the affected dependency.
+2. **Feature-driven updates**: Dependencies are updated when the project needs a new feature provided by a newer version.
+3. **`go test` runs daily** with the latest dependency versions to detect breaking changes early.
+
+This approach balances security with intentionality, ensuring updates happen for concrete reasons rather than on autopilot.
+
 ## Development
 
 ### Prerequisites
